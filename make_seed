@@ -1,0 +1,69 @@
+#!/bin/bash
+# make_seed - packs a folder into a seed
+# Author: Alexander Surma <surma@drebesium.org> - released under GPL
+
+# Settings
+APPNAME=$(basename "${0}")
+VERSION=1.0
+PACKER="bzip2 -cz"
+UNPACKER="bzip2 -cd 2>/dev/null"
+ENCRYPT="aespipe -e AES256 -H rmd160"
+DECRYPT="aespipe -e AES256 -H rmd160 -d"
+
+version() {
+	echo "${APPNAME} v${VERSION}"
+}
+
+usage() {
+	version
+	echo " [OPTIONS] <directory>"
+	echo "Options:"
+	echo "  -v		Print version"
+	echo "  -h		This message"
+	mkill $@
+}
+
+cleanup() {
+	echo -n # aka NOP
+}
+
+mkill() {
+	cleanup
+	exit ${1-1}
+}
+
+error() {
+	echo "${APPNAME}: ${1}" >&2
+	mkill ${2} 
+}
+
+generate_seed_file() {
+	cat << EOF 
+	#!/bin/bash
+
+	echo -n "Unpacking... "
+	cat \${0} | grep -E '^#d' | sed -r 's/^#d//' | base64 -d - \
+		| ${DECRYPT} | ${UNPACKER} | cpio --extract
+	echo "done."
+EOF
+}
+
+trap mkill INT TERM
+
+while getopts ":vh" arg; do
+	case "${arg}" in
+		v) version ; mkill 0 ;;
+		h) usage 0 ;;
+		:) error "${OPTARG} requires an argument" ;;
+		?) usage 1 ;;
+	esac
+done
+shift $((${OPTIND}-1))
+
+[ ! -d "${1}" ] && error "\"${1}\" not found"
+cd ${1}
+generate_seed_file
+find . | cpio --create | ${PACKER} | ${ENCRYPT} | base64 - \
+	| sed -r 's/^/#d/'
+cleanup
+
