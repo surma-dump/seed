@@ -61,9 +61,9 @@ done
 shift $((${OPTIND}-1))
 
 [ ! -d "${1}" ] && error "\"${1}\" not found"
-cd ${1}
+cd $(dirname ${1})
 generate_seed_file
-find . | cpio --create | ${PACKER} | ${ENCRYPT} | base64 - \
+find ./$(basename ${1}) | cpio --create | ${PACKER} | ${ENCRYPT} | base64 - \
 	| sed -r 's/^/#d/'
 cleanup
 
