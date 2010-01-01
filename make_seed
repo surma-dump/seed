@@ -41,10 +41,9 @@ generate_seed_file() {
 	cat << EOF 
 	#!/bin/bash
 
-	echo -n "Unpacking... "
+	echo "Unpacking... "
 	cat \${0} | grep -E '^#d' | sed -r 's/^#d//' | base64 -d - \
-		| ${DECRYPT} | ${UNPACKER} | cpio --extract
-	echo "done."
+		| ${DECRYPT} | ${UNPACKER} | cpio --extract 2>/dev/null
 EOF
 }
 
@@ -63,7 +62,7 @@ shift $((${OPTIND}-1))
 [ ! -d "${1}" ] && error "\"${1}\" not found"
 cd $(dirname ${1})
 generate_seed_file
-find ./$(basename ${1}) | cpio --create | ${PACKER} | ${ENCRYPT} | base64 - \
+find ./$(basename ${1}) | cpio --create 2>/dev/null | ${PACKER} | ${ENCRYPT} | base64 - \
 	| sed -r 's/^/#d/'
 cleanup
 
