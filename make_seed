@@ -39,11 +39,16 @@ error() {
 
 generate_seed_file() {
 	cat << EOF 
-	#!/bin/bash
+#!/bin/bash
 
-	echo "Unpacking... "
-	cat \${0} | grep -E '^#d' | sed -r 's/^#d//' | base64 -d - \
-		| ${DECRYPT} | ${UNPACKER} | cpio --extract 2>/dev/null
+echo "Unpacking... "
+cat \${0} \\
+	| grep -E '^#d' \\
+	| sed -r 's/^#d//' \\
+	| base64 -d - \\
+	| ${DECRYPT} \\
+	| ${UNPACKER} \\
+	| cpio --extract 2>/dev/null
 EOF
 }
 
